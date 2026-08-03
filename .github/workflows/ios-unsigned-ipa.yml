@@ -1,0 +1,75 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "native-ios/**"
+      - ".github/workflows/ios-unsigned-ipa.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build unsigned device app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project native-ios/CANVAULT.xcodeproj \
+            -scheme CANVAULT \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/CANVAULTDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/CANVAULTDerivedData/Build/Products/Release-iphoneos/CANVAULT.app"
+          test -d "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          ditto "$APP_PATH" "$RUNNER_TEMP/Payload/CANVAULT.app"
+          cd "$RUNNER_TEMP"
+          /usr/bin/zip -qry "$GITHUB_WORKSPACE/CANVAULT-iOS-Unsigned-1.9.3.ipa" Payload
+          shasum -a 256 "$GITHUB_WORKSPACE/CANVAULT-iOS-Unsigned-1.9.3.ipa" | tee "$GITHUB_WORKSPACE/CANVAULT-iOS-Unsigned-1.9.3.sha256"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CANVAULT-iOS-Unsigned-1.9.3
+          path: |
+            CANVAULT-iOS-Unsigned-1.9.3.ipa
+            CANVAULT-iOS-Unsigned-1.9.3.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach IPA to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.9.3 >/dev/null 2>&1; then
+            gh release upload v1.9.3 \
+              CANVAULT-iOS-Unsigned-1.9.3.ipa \
+              CANVAULT-iOS-Unsigned-1.9.3.sha256 \
+              --clobber
+          else
+            gh release create v1.9.3 \
+              CANVAULT-iOS-Unsigned-1.9.3.ipa \
+              CANVAULT-iOS-Unsigned-1.9.3.sha256 \
+              --title "CANVAULT 1.9.3" \
+              --notes-file RELEASE_NOTES_1.9.3.md
+          fi
