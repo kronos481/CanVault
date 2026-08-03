@@ -3,7 +3,7 @@ package com.canvault.app.ui.sound
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
-import android.provider.Settings
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -20,16 +20,16 @@ import kotlin.math.pow
 import kotlin.math.sin
 
 enum class UiSoundEffect(val playbackVolume: Float) {
-    STANDARD(0.52f),
-    NAVIGATION(0.48f),
-    PRIMARY(0.56f),
-    SCAN(0.54f),
-    SHAKE(0.50f),
-    COLOR(0.50f),
-    ARCHIVE(0.48f),
-    RESTORE(0.50f),
-    SUCCESS(0.52f),
-    DESTRUCTIVE(0.46f),
+    STANDARD(0.70f),
+    NAVIGATION(0.66f),
+    PRIMARY(0.74f),
+    SCAN(0.72f),
+    SHAKE(0.68f),
+    COLOR(0.70f),
+    ARCHIVE(0.66f),
+    RESTORE(0.70f),
+    SUCCESS(0.74f),
+    DESTRUCTIVE(0.66f),
 }
 
 class CanVaultSoundController(context: Context) {
@@ -38,28 +38,43 @@ class CanVaultSoundController(context: Context) {
         .setMaxStreams(3)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build(),
         )
         .build()
     private val sampleIds = Collections.synchronizedMap(EnumMap<UiSoundEffect, Int>(UiSoundEffect::class.java))
     private val loadedSampleIds = Collections.synchronizedSet(mutableSetOf<Int>())
+    private val effectBySampleId = Collections.synchronizedMap(mutableMapOf<Int, UiSoundEffect>())
+    private val pendingEffects = Collections.synchronizedSet(mutableSetOf<UiSoundEffect>())
     private val loader = Executors.newSingleThreadExecutor()
     @Volatile private var released = false
 
     init {
         soundPool.setOnLoadCompleteListener { _, sampleId, status ->
-            if (status == 0 && !released) loadedSampleIds += sampleId
+            if (status == 0 && !released) {
+                loadedSampleIds += sampleId
+                effectBySampleId[sampleId]?.let { effect -> playIfPending(effect, sampleId) }
+            } else if (status != 0) {
+                Log.w(TAG, "SoundPool failed to load sample $sampleId with status $status")
+            }
         }
         loader.execute(::preload)
     }
 
     fun play(effect: UiSoundEffect = UiSoundEffect.STANDARD) {
-        if (released || !systemTouchSoundsEnabled()) return
-        val sampleId = sampleIds[effect] ?: return
-        if (sampleId !in loadedSampleIds) return
-        soundPool.play(
+        if (released) return
+        val sampleId = sampleIds[effect]
+        if (sampleId == null || sampleId !in loadedSampleIds) {
+            pendingEffects += effect
+            return
+        }
+        playLoaded(effect, sampleId)
+    }
+
+    private fun playLoaded(effect: UiSoundEffect, sampleId: Int) {
+        if (released) return
+        val streamId = soundPool.play(
             sampleId,
             effect.playbackVolume,
             effect.playbackVolume,
@@ -67,6 +82,11 @@ class CanVaultSoundController(context: Context) {
             0,
             1f,
         )
+        if (streamId == 0) Log.w(TAG, "SoundPool could not start ${effect.name}")
+    }
+
+    private fun playIfPending(effect: UiSoundEffect, sampleId: Int) {
+        if (pendingEffects.remove(effect)) playLoaded(effect, sampleId)
     }
 
     fun release() {
@@ -75,27 +95,27 @@ class CanVaultSoundController(context: Context) {
         soundPool.release()
         sampleIds.clear()
         loadedSampleIds.clear()
+        effectBySampleId.clear()
+        pendingEffects.clear()
     }
 
     private fun preload() {
-        val soundDirectory = File(appContext.cacheDir, "ui-sounds-v1").apply { mkdirs() }
+        val soundDirectory = File(appContext.cacheDir, "ui-sounds-v2").apply { mkdirs() }
         UiSoundEffect.entries.forEach { effect ->
             if (released || Thread.currentThread().isInterrupted) return
             val file = File(soundDirectory, "${effect.name.lowercase()}.wav")
             val wav = CanVaultSoundSynthesis.wav(effect)
-            if (!file.exists() || file.length() != wav.size.toLong()) file.writeBytes(wav)
+            file.writeBytes(wav)
             val sampleId = soundPool.load(file.absolutePath, 1)
             sampleIds[effect] = sampleId
+            effectBySampleId[sampleId] = effect
+            if (sampleId in loadedSampleIds) playIfPending(effect, sampleId)
         }
     }
 
-    private fun systemTouchSoundsEnabled(): Boolean = runCatching {
-        Settings.System.getInt(
-            appContext.contentResolver,
-            Settings.System.SOUND_EFFECTS_ENABLED,
-            1,
-        ) != 0
-    }.getOrDefault(true)
+    private companion object {
+        const val TAG = "CanVaultSounds"
+    }
 }
 
 val LocalCanVaultSounds = staticCompositionLocalOf<CanVaultSoundController> {
@@ -177,7 +197,8 @@ internal object CanVaultSoundSynthesis {
                     0.085 * chirp(time, duration, 210.0, 120.0) * exp(-time * 32.0) +
                         0.018 * noise * exp(-time * 80.0)
             }
-            samples[index] = (signal * attack).coerceIn(-0.22, 0.22).times(Short.MAX_VALUE).toInt().toShort()
+            val masteredSignal = signal * attack * 2.8
+            samples[index] = masteredSignal.coerceIn(-0.70, 0.70).times(Short.MAX_VALUE).toInt().toShort()
         }
         return samples
     }

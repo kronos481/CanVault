@@ -15,8 +15,8 @@ class UiSoundsTest {
 
             assertTrue("$effect is too short", durationMillis >= 50.0)
             assertTrue("$effect is too long", durationMillis <= 165.0)
-            assertTrue("$effect is inaudible", peak >= 500)
-            assertTrue("$effect is too loud", peak <= (Short.MAX_VALUE * 0.22).toInt() + 1)
+            assertTrue("$effect is inaudible", peak >= 2_000)
+            assertTrue("$effect is too loud", peak <= (Short.MAX_VALUE * 0.70).toInt() + 1)
         }
     }
 
