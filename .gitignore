@@ -49,6 +49,7 @@ yarn-error.*
 # release packages belong in GitHub Releases
 *.apk
 *.ipa
+*.sha256
 /CANVAULT-iOS-Source-*.zip
 
 # typescript
