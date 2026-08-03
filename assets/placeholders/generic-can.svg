@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 480" role="img" aria-labelledby="title description">
+  <title id="title">Neutral spray can placeholder</title>
+  <desc id="description">Generic unbranded metallic can silhouette for products without approved imagery.</desc>
+  <defs><linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#59616b"/><stop offset=".45" stop-color="#d8dde2"/><stop offset="1" stop-color="#626b76"/></linearGradient></defs>
+  <rect x="70" y="14" width="100" height="48" rx="12" fill="#20252c"/>
+  <path d="M48 92Q48 60 80 54h80q32 6 32 38v336q0 30-30 30H78q-30 0-30-30z" fill="url(#metal)" stroke="#f5f7fa" stroke-opacity=".28" stroke-width="3"/>
+  <rect x="64" y="154" width="112" height="180" rx="16" fill="#15191f"/>
+  <rect x="78" y="174" width="84" height="52" rx="10" fill="#68727f"/>
+  <path d="M86 254h68M96 274h48M102 294h36" stroke="#aeb8c4" stroke-width="8" stroke-linecap="round"/>
+</svg>
