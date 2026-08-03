@@ -162,6 +162,9 @@ private fun CanVaultAppContent(
                         sounds.play(UiSoundEffect.SCAN)
                         navController.navigate("scanner")
                     },
+                    onBack = {
+                        if (!navController.popBackStack()) navigateTopLevel("dashboard")
+                    },
                     onSaved = {
                         sounds.play(UiSoundEffect.SUCCESS)
                         navigateTopLevel("inventory")

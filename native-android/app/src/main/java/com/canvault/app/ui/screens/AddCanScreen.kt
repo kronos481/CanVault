@@ -18,22 +18,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +47,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,6 +82,7 @@ import com.canvault.app.data.catalogLine
 import com.canvault.app.data.resolveCanColor
 import com.canvault.app.data.resolveCanColorHex
 import com.canvault.app.data.suggestPurchasePrice
+import com.canvault.app.ui.components.BrandLogo
 import com.canvault.app.ui.components.safeCanColor
 import com.canvault.app.ui.sound.LocalCanVaultSounds
 import com.canvault.app.ui.sound.UiSoundEffect
@@ -109,6 +115,7 @@ fun AddCanScreen(
     prefill: ScanPrefill?,
     onPrefillConsumed: () -> Unit,
     onScan: () -> Unit,
+    onBack: () -> Unit,
     onSaved: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -194,30 +201,120 @@ fun AddCanScreen(
         }
     }
 
+    val saveCan: () -> Unit = {
+        if (formValid && !saving) {
+            saving = true
+            scope.launch {
+                val verifiedColor = OfficialCanColorCatalog.find(lineId, colorName, colorCode)
+                repository.add(
+                    AddCanRequest(
+                        brandId = brandId,
+                        canLineId = lineId,
+                        colorName = verifiedColor?.colorName ?: colorName.trim(),
+                        colorCode = verifiedColor?.colorCode ?: verifiedColor?.productCode ?: colorCode.ifBlank { null },
+                        customHex = verifiedColor?.hex ?: customHex.ifBlank { null },
+                        volumeMl = volume.toIntOrNull(),
+                        fillPercent = fillPercent,
+                        quantity = quantity,
+                        purchasePriceCents = price.replace(',', '.').toDoubleOrNull()?.times(100)?.toInt(),
+                        photoPath = photoPath,
+                        externalBarcode = externalBarcode,
+                    ),
+                )
+                saving = false
+                onSaved()
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 16.dp,
-                bottom = contentPadding.calculateBottomPadding() + 32.dp,
-            ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .statusBarsPadding(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Dose hinzufügen", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Daten prüfen und lokal speichern", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            OutlinedButton(onClick = onScan) {
-                Icon(Icons.Rounded.DocumentScanner, contentDescription = null)
-                Text("Barcode", Modifier.padding(start = 8.dp))
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+            shadowElevation = 4.dp,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = {
+                        sounds.play(UiSoundEffect.NAVIGATION)
+                        onBack()
+                    },
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Hinzufügen schließen")
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "Dose hinzufügen",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        when {
+                            saving -> "Wird gespeichert …"
+                            formValid -> "Bereit zum Speichern"
+                            else -> "Farbname ergänzen"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                FilledIconButton(
+                    onClick = {
+                        sounds.play(UiSoundEffect.PRIMARY)
+                        saveCan()
+                    },
+                    enabled = formValid && !saving,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    if (saving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.5.dp,
+                        )
+                    } else {
+                        Icon(Icons.Rounded.Check, contentDescription = "Dose speichern")
+                    }
+                }
             }
         }
 
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 32.dp,
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            OutlinedButton(
+                onClick = onScan,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+            ) {
+                Icon(Icons.Rounded.DocumentScanner, contentDescription = null)
+                Text("Barcode scannen", Modifier.padding(start = 8.dp))
+            }
         AnimatedVisibility(scanMessage != null) {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -241,8 +338,9 @@ fun AddCanScreen(
         }
 
         Text("Produkt", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        CatalogDropdown(
+        BrandCatalogDropdown(
             label = "Marke",
+            selectedId = brandId,
             selected = selectedBrand.displayName,
             options = canCatalog.map { it.id to it.displayName },
             onSelect = {
@@ -434,35 +532,7 @@ fun AddCanScreen(
             Text(if (photoPath == null) "Foto auswählen" else "Foto ändern", Modifier.padding(start = 8.dp))
         }
 
-        Spacer(Modifier.height(4.dp))
-        Button(
-            onClick = {
-                saving = true
-                scope.launch {
-                    val verifiedColor = OfficialCanColorCatalog.find(lineId, colorName, colorCode)
-                    repository.add(
-                        AddCanRequest(
-                            brandId = brandId,
-                            canLineId = lineId,
-                            colorName = verifiedColor?.colorName ?: colorName.trim(),
-                            colorCode = verifiedColor?.colorCode ?: verifiedColor?.productCode ?: colorCode.ifBlank { null },
-                            customHex = verifiedColor?.hex ?: customHex.ifBlank { null },
-                            volumeMl = volume.toIntOrNull(),
-                            fillPercent = fillPercent,
-                            quantity = quantity,
-                            purchasePriceCents = price.replace(',', '.').toDoubleOrNull()?.times(100)?.toInt(),
-                            photoPath = photoPath,
-                            externalBarcode = externalBarcode,
-                        ),
-                    )
-                    saving = false
-                    onSaved()
-                }
-            },
-            enabled = formValid,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-        ) {
-            Text(if (saving) "Wird gespeichert …" else "$quantity ${if (quantity == 1) "Dose" else "Dosen"} speichern")
+            Spacer(Modifier.height(4.dp))
         }
     }
 }
@@ -576,6 +646,62 @@ private fun OfficialColorNameField(
                     onClick = {
                         sounds.play(UiSoundEffect.STANDARD)
                         onSelect(color)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BrandCatalogDropdown(
+    label: String,
+    selectedId: String,
+    selected: String,
+    options: List<Pair<String, String>>,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val sounds = LocalCanVaultSounds.current
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {
+        sounds.play(UiSoundEffect.STANDARD)
+        expanded = !expanded
+    }) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            label = { Text(label) },
+            trailingIcon = {
+                Row(
+                    modifier = Modifier.padding(end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    BrandLogo(
+                        brandId = selectedId,
+                        modifier = Modifier.width(76.dp).height(28.dp),
+                    )
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+                }
+            },
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (id, name) ->
+                DropdownMenuItem(
+                    text = { Text(name, fontWeight = FontWeight.Medium) },
+                    trailingIcon = {
+                        BrandLogo(
+                            brandId = id,
+                            modifier = Modifier.width(92.dp).height(30.dp),
+                        )
+                    },
+                    onClick = {
+                        sounds.play(UiSoundEffect.STANDARD)
+                        onSelect(id)
                         expanded = false
                     },
                 )
