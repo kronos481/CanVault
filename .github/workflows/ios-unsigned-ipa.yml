@@ -33,7 +33,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            build 2>&1 | tee "$GITHUB_WORKSPACE/xcodebuild.log"
+
+      - name: Attach failed Xcode log
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.9.3 xcodebuild.log --clobber
 
       - name: Package IPA
         run: |
@@ -62,6 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view v1.9.3 >/dev/null 2>&1; then
+            gh release delete-asset v1.9.3 xcodebuild.log -y >/dev/null 2>&1 || true
             gh release upload v1.9.3 \
               CANVAULT-iOS-Unsigned-1.9.3.ipa \
               CANVAULT-iOS-Unsigned-1.9.3.sha256 \
