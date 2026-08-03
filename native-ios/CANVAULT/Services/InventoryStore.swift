@@ -138,20 +138,25 @@ final class InventoryStore: ObservableObject {
     func csvExportURL() -> URL? {
         let header = "id;marke;linie;farbe;farbcode;hex;volumen_ml;fuellstand_prozent;status;preis_cent\n"
         let catalog = CatalogStore.shared
-        let rows = snapshot.cans.map { can in
-            [
+        var rowValues: [String] = []
+        rowValues.reserveCapacity(snapshot.cans.count)
+        for can in snapshot.cans {
+            let values: [String] = [
                 can.id,
                 catalog.brandName(can.brandId),
                 catalog.lineName(can.canLineId),
                 can.colorName,
                 can.colorCode ?? "",
                 can.customHex ?? "",
-                can.volumeMl.map(String.init) ?? "",
-                can.fillPercent.map(String.init) ?? "",
+                can.volumeMl.map { String($0) } ?? "",
+                can.fillPercent.map { String($0) } ?? "",
                 can.status.rawValue,
-                can.purchasePriceCents.map(String.init) ?? "",
-            ].map(Self.csvEscape).joined(separator: ";")
-        }.joined(separator: "\n")
+                can.purchasePriceCents.map { String($0) } ?? "",
+            ]
+            let escapedValues = values.map { Self.csvEscape($0) }
+            rowValues.append(escapedValues.joined(separator: ";"))
+        }
+        let rows = rowValues.joined(separator: "\n")
         let destination = fileManager.temporaryDirectory.appendingPathComponent("canvault-history.csv")
         do {
             try (header + rows).write(to: destination, atomically: true, encoding: .utf8)

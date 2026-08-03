@@ -60,9 +60,14 @@ enum StorageStatistics {
     }
 
     private static func mostFrequent(_ values: [String]) -> String? {
-        Dictionary(grouping: values.filter { !$0.isEmpty }, by: { $0 })
-            .mapValues { $0.count }
-            .sorted { first, second in first.value == second.value ? first.key < second.key : first.value > second.value }
-            .first?.key
+        var counts: [String: Int] = [:]
+        for value in values where !value.isEmpty {
+            counts[value, default: 0] += 1
+        }
+        let ranked = counts.sorted { first, second in
+            if first.value != second.value { return first.value > second.value }
+            return first.key < second.key
+        }
+        return ranked.first?.key
     }
 }

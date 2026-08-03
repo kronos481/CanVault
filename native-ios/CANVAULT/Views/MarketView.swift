@@ -177,33 +177,19 @@ private struct MarketFlag: View {
     let market: CatalogMarket
 
     var body: some View {
-        Canvas { context, size in
-            let rect = CGRect(origin: .zero, size: size)
-            switch market {
-            case .europe:
-                context.fill(Path(rect), with: .color(Color(hex: "#173A8F")))
-                for index in 0..<8 {
-                    let angle = Double(index) * .pi / 4
-                    let point = CGPoint(x: size.width / 2 + cos(angle) * size.width * 0.23, y: size.height / 2 + sin(angle) * size.height * 0.28)
-                    context.fill(Path(ellipseIn: CGRect(x: point.x - 1.3, y: point.y - 1.3, width: 2.6, height: 2.6)), with: .color(Color(hex: "#FFD84D")))
-                }
-            case .unitedStates:
-                context.fill(Path(rect), with: .color(.white))
-                for stripe in 0..<7 { context.fill(Path(CGRect(x: 0, y: CGFloat(stripe) * size.height / 7, width: size.width, height: size.height / 14)), with: .color(Color(hex: "#B22234"))) }
-                context.fill(Path(CGRect(x: 0, y: 0, width: size.width * 0.45, height: size.height * 0.55)), with: .color(Color(hex: "#3C3B6E")))
-            case .unitedKingdom:
-                context.fill(Path(rect), with: .color(Color(hex: "#173A75")))
-                context.fill(Path(CGRect(x: 0, y: size.height * 0.36, width: size.width, height: size.height * 0.28)), with: .color(.white))
-                context.fill(Path(CGRect(x: size.width * 0.39, y: 0, width: size.width * 0.22, height: size.height)), with: .color(.white))
-                context.fill(Path(CGRect(x: 0, y: size.height * 0.43, width: size.width, height: size.height * 0.14)), with: .color(Color(hex: "#C8102E")))
-                context.fill(Path(CGRect(x: size.width * 0.44, y: 0, width: size.width * 0.12, height: size.height)), with: .color(Color(hex: "#C8102E")))
-            case .switzerland:
-                context.fill(Path(rect), with: .color(Color(hex: "#D52B1E")))
-                context.fill(Path(CGRect(x: size.width * 0.25, y: size.height * 0.4, width: size.width * 0.5, height: size.height * 0.2)), with: .color(.white))
-                context.fill(Path(CGRect(x: size.width * 0.42, y: size.height * 0.2, width: size.width * 0.16, height: size.height * 0.6)), with: .color(.white))
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 2))
+        Text(flag)
+            .font(.system(size: 22))
+            .frame(width: 30, height: 22)
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
         .accessibilityLabel("Flagge \(market.label)")
+    }
+
+    private var flag: String {
+        switch market {
+        case .europe: "🇪🇺"
+        case .unitedStates: "🇺🇸"
+        case .unitedKingdom: "🇬🇧"
+        case .switzerland: "🇨🇭"
+        }
     }
 }
