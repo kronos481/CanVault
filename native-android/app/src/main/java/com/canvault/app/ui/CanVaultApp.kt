@@ -2,10 +2,10 @@ package com.canvault.app.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircle
+import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Inventory2
-import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.canvault.app.data.InventoryRepository
+import com.canvault.app.data.ProjectRepository
 import com.canvault.app.data.SharedCatalogRepository
 import com.canvault.app.ui.screens.AddCanScreen
 import com.canvault.app.ui.screens.CanDetailScreen
@@ -31,6 +32,8 @@ import com.canvault.app.ui.screens.ColorComboScreen
 import com.canvault.app.ui.screens.DashboardScreen
 import com.canvault.app.ui.screens.InventoryScreen
 import com.canvault.app.ui.screens.MoreScreen
+import com.canvault.app.ui.screens.ProjectDetailScreen
+import com.canvault.app.ui.screens.ProjectsScreen
 import com.canvault.app.ui.screens.ScanPrefill
 import com.canvault.app.ui.screens.ScannerScreen
 import com.canvault.app.ui.screens.StorageScreen
@@ -49,16 +52,17 @@ private val destinations = listOf(
     Destination("inventory", "Inventar", Icons.Rounded.Inventory2),
     Destination("add", "Hinzufügen", Icons.Rounded.AddCircle),
     Destination("archive", "Speicher", Icons.Rounded.Folder),
-    Destination("more", "Mehr", Icons.Rounded.MoreHoriz),
+    Destination("projects", "Projekte", Icons.Rounded.Construction),
 )
 
 @Composable
 fun CanVaultApp(
     repository: InventoryRepository,
     sharedCatalogRepository: SharedCatalogRepository,
+    projectRepository: ProjectRepository,
 ) {
     CanVaultSoundProvider {
-        CanVaultAppContent(repository, sharedCatalogRepository)
+        CanVaultAppContent(repository, sharedCatalogRepository, projectRepository)
     }
 }
 
@@ -66,6 +70,7 @@ fun CanVaultApp(
 private fun CanVaultAppContent(
     repository: InventoryRepository,
     sharedCatalogRepository: SharedCatalogRepository,
+    projectRepository: ProjectRepository,
 ) {
     val navController = rememberNavController()
     val sounds = LocalCanVaultSounds.current
@@ -133,6 +138,10 @@ private fun CanVaultAppContent(
                         sounds.play(UiSoundEffect.STANDARD)
                         navController.navigate("market")
                     },
+                    onOpenProjects = {
+                        sounds.play(UiSoundEffect.NAVIGATION)
+                        navigateTopLevel("projects")
+                    },
                     onOpenCan = { navController.navigate("can/$it") },
                 )
             }
@@ -178,10 +187,20 @@ private fun CanVaultAppContent(
                     onOpenCan = { navController.navigate("can/$it") },
                 )
             }
+            composable("projects") {
+                ProjectsScreen(
+                    projectRepository = projectRepository,
+                    inventoryRepository = repository,
+                    contentPadding = contentPadding,
+                    onOpenProject = { navController.navigate("project/$it") },
+                    onOpenMore = { navController.navigate("more") },
+                )
+            }
             composable("more") {
                 MoreScreen(
                     repository = repository,
                     contentPadding = contentPadding,
+                    onBack = { navController.popBackStack() },
                     onOpenMarket = { navController.navigate("market") },
                 )
             }
@@ -219,6 +238,16 @@ private fun CanVaultAppContent(
                     repository = repository,
                     canId = entry.arguments?.getString("canId").orEmpty(),
                     onBack = { navController.popBackStack() },
+                )
+            }
+            composable("project/{projectId}") { entry ->
+                ProjectDetailScreen(
+                    projectRepository = projectRepository,
+                    inventoryRepository = repository,
+                    sharedCatalogRepository = sharedCatalogRepository,
+                    projectId = entry.arguments?.getString("projectId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onOpenProject = { navController.navigate("project/$it") },
                 )
             }
         }

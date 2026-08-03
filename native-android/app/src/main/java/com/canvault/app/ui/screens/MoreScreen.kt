@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
@@ -25,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +52,7 @@ import java.io.File
 fun MoreScreen(
     repository: InventoryRepository,
     contentPadding: PaddingValues,
+    onBack: () -> Unit,
     onOpenMarket: () -> Unit,
 ) {
     val snapshot by repository.snapshot.collectAsStateWithLifecycle()
@@ -68,8 +72,21 @@ fun MoreScreen(
             ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Mehr", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Markt, Export und App-Informationen", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = {
+                    sounds.play(UiSoundEffect.NAVIGATION)
+                    onBack()
+                },
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Zurück zu Projekten")
+            }
+            Column(Modifier.padding(start = 8.dp)) {
+                Text("Mehr", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Markt, Export und App-Informationen", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
 
         Button(
             onClick = {

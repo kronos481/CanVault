@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storefront
@@ -61,6 +62,7 @@ fun DashboardScreen(
     onAdd: () -> Unit,
     onOpenColorCombo: () -> Unit,
     onOpenMarket: () -> Unit,
+    onOpenProjects: () -> Unit,
     onOpenCan: (String) -> Unit,
 ) {
     val snapshot by repository.snapshot.collectAsStateWithLifecycle()
@@ -186,6 +188,35 @@ fun DashboardScreen(
                             "Harmonische Paletten aus Füllstand, Menge und deinen exakten Farben",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                onClick = onOpenProjects,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.Construction,
+                        contentDescription = null,
+                        tint = CanVaultColors.Warning,
+                        modifier = Modifier.size(32.dp),
+                    )
+                    Column(Modifier.padding(start = 14.dp).weight(1f)) {
+                        Text("Projects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Aktionen, Material, Einkauf, Budget und Flächenabdeckung planen",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
