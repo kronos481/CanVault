@@ -1,0 +1,13 @@
+{
+  "images": [
+    {
+      "filename": "brand_montana_cans.png",
+      "idiom": "universal",
+      "scale": "1x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

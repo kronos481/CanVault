@@ -1,8 +1,8 @@
 # CANVAULT
 
-CANVAULT is an Android app for keeping track of spray paint cans. It shows what is currently available, how much paint is left, which colors are in the collection, and which cans have already been used or archived.
+CANVAULT is a native Android and iOS app for keeping track of spray paint cans. It shows what is currently available, how much paint is left, which colors are in the collection, and which cans have already been used or archived.
 
-The app is made for people who want one clear place for their cans instead of relying on notes, photos, or memory. The maintained Android project is located in [`native-android`](native-android/).
+The app is made for people who want one clear place for their cans instead of relying on notes, photos, or memory. The maintained native projects are located in [`native-android`](native-android/) and [`native-ios`](native-ios/).
 
 ## Features
 
@@ -68,7 +68,11 @@ powershell -ExecutionPolicy Bypass -File ".\INSTALL_CANVAULT.ps1"
 
 The first run downloads Google's Android command-line tools, builds the APK, installs it, and starts the app. Existing CANVAULT data is preserved when the app is updated.
 
-## Build and test
+## Run on iOS
+
+The native SwiftUI project is located in [`native-ios`](native-ios/). Open `CANVAULT.xcodeproj` in Xcode 15.4 or newer, choose an Apple Development Team under **Signing & Capabilities**, connect an iPhone, and press **Run**. The repository also contains a macOS GitHub Actions workflow that checks simulator compilation after each iOS change.
+
+## Build and test Android
 
 ```powershell
 cd .\native-android
@@ -92,5 +96,6 @@ native-android/app/build/outputs/apk/release/app-release.apk
 - ZXing for QR code generation
 - Coil for local photos
 - JUnit and Android Lint
+- SwiftUI, AVFoundation, PhotosUI and native iOS sharing
 
-CANVAULT currently targets Android only. The application ID is `com.canvault.app`.
+Android uses the application ID `com.canvault.app`. iOS uses the bundle identifier `com.kronos481.canvault`.

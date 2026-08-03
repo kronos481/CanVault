@@ -15,8 +15,8 @@ android {
         applicationId = "com.canvault.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 22
-        versionName = "1.9.2"
+        versionCode = 23
+        versionName = "1.9.3"
 
         val supabaseUrl = providers.gradleProperty("CANVAULT_SUPABASE_URL")
             .orElse(providers.environmentVariable("CANVAULT_SUPABASE_URL"))

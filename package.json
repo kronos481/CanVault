@@ -1,7 +1,7 @@
 {
   "name": "canvault",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.9.3",
   "dependencies": {
     "@expo/ui": "~57.0.8",
     "@expo/vector-icons": "^15.0.2",
